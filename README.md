@@ -1,0 +1,3 @@
+# PyComix
+
+Python Comic reader
