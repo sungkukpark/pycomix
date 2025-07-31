@@ -10,4 +10,4 @@ __description__ = "A modern comic reader application built with PyQt6"
 
 from pycomix.app import PyComixApp
 
-__all__ = ["PyComixApp"] 
+__all__ = ["PyComixApp"]
