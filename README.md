@@ -20,8 +20,8 @@
 **1. 저장소 복제(Clone)**
 
 ```bash
-git clone [https://github.com/your-username/PyComix.git](https://github.com/your-username/PyComix.git)
-cd PyComix
+git clone [https://github.com/sungkukpark/pycomix.git](https://github.com/sungkukpark/pycomix.git)
+cd pycomix
 ```
 
 **2. 가상 환경 생성 및 활성화**
@@ -55,7 +55,7 @@ python main.py
 ## 🛠️ 기술 스택
 
 * **언어**: Python 3
-* **GUI 프레임워크**: PyQt6 (또는 PySide6)
+* **GUI 프레임워크**: PyQt6
 * **이미지 처리**: Pillow
 * **패키징**: PyInstaller
 
