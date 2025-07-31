@@ -35,7 +35,7 @@ def main():
     except ImportError as e:
         print(f"Error importing PyComix modules: {e}")
         print("Make sure all required dependencies are installed.")
-        print("Run: pip install -r requirements.txt")
+        print("Run: `pip install -r requirements.txt`")
         sys.exit(1)
 
     except Exception as e:
