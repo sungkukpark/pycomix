@@ -23,8 +23,8 @@ from PyQt6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
 )
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QAction, QIcon, QKeySequence, QPixmap
+from PyQt6.QtCore import Qt, QSize, QEvent
+from PyQt6.QtGui import QAction, QIcon, QKeySequence, QPixmap, QKeyEvent
 
 
 class MainWindow(QMainWindow):
@@ -44,6 +44,7 @@ class MainWindow(QMainWindow):
         # Initialize data attributes
         self.current_folder = None
         self.image_files = []
+        self.current_file_index = -1  # Track current selected file index
         self.supported_formats = {
             ".png",
             ".jpg",
@@ -59,6 +60,13 @@ class MainWindow(QMainWindow):
         self._setup_menu_bar()
         self._setup_toolbar()
         self._setup_status_bar()
+
+        # Set focus policy to ensure keyboard events are received
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocus()
+
+        # Install event filter to catch all keyboard events
+        self.installEventFilter(self)
 
         # Show welcome message
         self.status_bar.showMessage("PyComix 시작됨 - 만화 폴더를 열어보세요")
@@ -80,7 +88,13 @@ class MainWindow(QMainWindow):
         self.file_list = QListWidget()
         self.file_list.setMaximumWidth(300)
         self.file_list.setMinimumWidth(200)
+        self.file_list.setFocusPolicy(
+            Qt.FocusPolicy.NoFocus
+        )  # No keyboard focus at all
         self.file_list.itemClicked.connect(self._on_file_selected)
+
+        # Override key events for file list to prevent interference
+        self.file_list.keyPressEvent = lambda event: None  # Ignore all key events
         self.file_list.setStyleSheet(
             """
             QListWidget {
@@ -238,6 +252,7 @@ class MainWindow(QMainWindow):
             if self.image_files:
                 self._populate_file_list()
                 # Load the first image automatically
+                self.current_file_index = 0
                 self._load_image_by_path(self.image_files[0])
                 # Select the first item in the list
                 self.file_list.setCurrentRow(0)
@@ -265,7 +280,14 @@ class MainWindow(QMainWindow):
         """Handle file selection from the list."""
         file_path = item.data(Qt.ItemDataRole.UserRole)
         if file_path:
-            self._load_image_by_path(Path(file_path))
+            # Update current file index
+            path_obj = Path(file_path)
+            if path_obj in self.image_files:
+                self.current_file_index = self.image_files.index(path_obj)
+            self._load_image_by_path(path_obj)
+
+            # Return focus to main window for keyboard navigation
+            self.setFocus()
 
     def _load_image_by_path(self, file_path):
         """Load and display an image file by path."""
@@ -324,6 +346,51 @@ class MainWindow(QMainWindow):
             <p>개발자: PyComix Team</p>
             """,
         )
+
+    def eventFilter(self, obj, event):
+        """Event filter to catch keyboard events globally."""
+        if event.type() == QEvent.Type.KeyPress:
+            return self._handle_key_press(event)
+        return super().eventFilter(obj, event)
+
+    def _handle_key_press(self, event: QKeyEvent):
+        """Handle keyboard events for navigation."""
+        if not self.image_files:  # No images loaded
+            return False
+
+        key = event.key()
+
+        if key in (Qt.Key.Key_Down, Qt.Key.Key_Right):
+            self._navigate_to_next_file()
+            return True  # Event handled
+        elif key in (Qt.Key.Key_Up, Qt.Key.Key_Left):
+            self._navigate_to_previous_file()
+            return True  # Event handled
+        elif key == Qt.Key.Key_Escape:
+            self.close()
+            return True  # Event handled
+
+        return False  # Event not handled, pass to parent
+
+    def _navigate_to_next_file(self):
+        """Navigate to the next file in the list."""
+        if self.current_file_index < len(self.image_files) - 1:
+            self.current_file_index += 1
+            self._load_image_by_path(self.image_files[self.current_file_index])
+            # Update file list selection
+            self.file_list.setCurrentRow(self.current_file_index)
+            # Ensure main window keeps focus
+            self.setFocus()
+
+    def _navigate_to_previous_file(self):
+        """Navigate to the previous file in the list."""
+        if self.current_file_index > 0:
+            self.current_file_index -= 1
+            self._load_image_by_path(self.image_files[self.current_file_index])
+            # Update file list selection
+            self.file_list.setCurrentRow(self.current_file_index)
+            # Ensure main window keeps focus
+            self.setFocus()
 
     def closeEvent(self, event):
         """Handle window close event."""
