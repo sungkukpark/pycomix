@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QSplitter,
 )
 from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QAction, QIcon, QKeySequence
+from PyQt6.QtGui import QAction, QIcon, QKeySequence, QPixmap
 
 
 class MainWindow(QMainWindow):
@@ -171,12 +171,38 @@ class MainWindow(QMainWindow):
         )
 
         if file_path:
-            self.status_bar.showMessage(f"파일 선택됨: {file_path}")
-            # TODO: Implement actual file loading
-            self.content_area.setText(
-                f"선택된 파일:\n{file_path}\n\n"
-                + "(만화 뷰어 기능은 아직 구현되지 않았습니다)"
+            self.status_bar.showMessage(f"파일 로딩 중: {file_path}")
+            self._load_image(file_path)
+
+    def _load_image(self, file_path):
+        """Load and display an image file."""
+        try:
+            # QPixmap으로 이미지 로드
+            pixmap = QPixmap(file_path)
+
+            if pixmap.isNull():
+                self.status_bar.showMessage("이미지를 로드할 수 없습니다.")
+                self.content_area.setText("이미지를 로드할 수 없습니다.")
+                return
+
+            # QLabel 크기에 맞게 이미지 크기 조정 (비율 유지하면서)
+            label_size = self.content_area.size()
+            scaled_pixmap = pixmap.scaled(
+                label_size,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
             )
+
+            # QLabel에 이미지 설정
+            self.content_area.setPixmap(scaled_pixmap)
+            self.content_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            # 상태바 업데이트
+            self.status_bar.showMessage(f"이미지 로드 완료: {file_path}")
+
+        except Exception as e:
+            self.status_bar.showMessage(f"이미지 로드 실패: {str(e)}")
+            self.content_area.setText(f"이미지 로드 실패:\n{str(e)}")
 
     def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""
